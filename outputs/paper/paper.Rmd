@@ -115,6 +115,15 @@ The article is structured as follows. We first introduced the background knowled
 \newpage
 # Reference
 
+
+
+Mortality analyses. Johns Hopkins Coronavirus Resource Center. (n.d.). Retrieved March 31, 2022, from https://coronavirus.jhu.edu/data/mortality 
+
+
+
+
+World Health Organization. (n.d.). Coronavirus. World Health Organization. Retrieved March 31, 2022, from https://www.who.int/health-topics/coronavirus#tab=tab_1 
+
 H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New 
 York, 2016.
 
