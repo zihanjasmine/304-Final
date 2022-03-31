@@ -1,0 +1,131 @@
+---
+title: "Estimation of COVID-19 cases in Ontario"
+author:
+- Zihan Zhang
+thanks: "Code and data are available at: https://github.com/zihanjasmine/final-paper."
+date: "`r format(Sys.time(), '%d %B %Y')`"
+abstract: "COVID-19 is a respiratory disease first discovered in 2019 and then spread across the world. Many people may be facing an increased level of anxiety and stress. In this report, we built a poisson model to estimate the COVID 19 cases in Ontario. We focus on how gender and age group affect the probability of getting COVID-19."
+Keywords: COVID-19, logistic model
+output:
+  bookdown::pdf_document2
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r,include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(modelsummary)
+```
+
+
+
+
+```{r,include=FALSE}
+# import data
+clean_data<-  read_csv(here::here("inputs/data/raw_data.csv"))
+```
+
+
+
+\newpage
+# Introduction
+
+Covid-19 is an infection disease first discovered in Wuhan, China in 2019 and then spread across the world. The disease spreads through small infected respiratory droplets, the infected droplets may direct contact with mouth, nose, or eyes and result in infection. COVID-19 is highly contagious, but the disease has a low fatality rate of less than 6% in the 20 most affected countries.
+Most infected people will have symptoms like fever, cough, tiredness, etc. These mild symptoms mainly affect the respiratory system and can be recovered in 5-6 days without hospitalization. 
+The article is structured as follows. We first introduced the background knowledge about COVID-19, then we will perform explanatory data analysis. The method section includes all the statistical methods we used in this paper. Then we built a poisson model to estimate COVID-19 cases in Ontario. Finally, we will discuss the limitations of our model and the next step.
+
+
+# Data
+
+
+
+## Data collection
+
+
+
+## Data processing 
+
+
+
+## Population and sample
+
+
+
+
+
+
+
+
+
+# Result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Discussion
+
+## Purpose and summary for the survey
+
+
+## Learn about the world
+
+
+
+## Weakness and areas in the future
+
+
+
+\newpage
+# Appendix
+
+
+\newpage
+# Reference
+
+H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New 
+York, 2016.
+
+
+R Core Team (2021). R: A language and environment for statistical computing. R 
+Foundation for Statistical Computing, Vienna, Austria. URL
+https://www.R-project.org/.
+  
+Vincent Arel-Bundock (2022). modelsummary: Summary Tables and Plots for Statistical Models and Data: Beautiful, Customizable, and Publication-Ready. R
+package version 0.9.6. https://CRAN.R-project.org/package=modelsummary
+  
+Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source 
+Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
+  
