@@ -2,7 +2,7 @@
 title: "Estimation of COVID-19 cases in Ontario"
 author:
 - Zihan Zhang
-thanks: "Code and data are available at: https://github.com/zihanjasmine/final-paper."
+thanks: "Code and data are available at: https://github.com/zihanjasmine/Estimation-of-COVID-19-cases-in-Ontario."
 date: "`r format(Sys.time(), '%d %B %Y')`"
 abstract: "COVID-19 is a respiratory disease first discovered in 2019 and then spread across the world. Many people may be facing an increased level of anxiety and stress. In this report, we built a poisson model to estimate the COVID 19 cases in Ontario. We focus on how gender and age group affect the probability of getting COVID-19."
 Keywords: COVID-19, logistic model
