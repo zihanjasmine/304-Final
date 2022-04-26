@@ -4,8 +4,7 @@ author:
 - Zihan Zhang
 thanks: "Code and data are available at: https://github.com/zihanjasmine/Estimation-of-COVID-19-cases-in-Ontario."
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "COVID-19 is a respiratory disease first discovered in 2019 and then spread across the world. Many people may be facing an increased level of anxiety and stress. In this report, we built a poisson model to estimate the COVID 19 cases in Ontario. We focus on how gender and age group affect the probability of getting COVID-19."
-Keywords: COVID-19, logistic model
+abstract: " COVID-19 is a respiratory disease first discovered in 2019 and then spread across the world. Many people may be facing an increased level of anxiety and stress. In this report, we built a poisson model to estimate the COVID 19 cases in Ontario. We focus on how gender and age group affect the probability of getting COVID-19. "
 output:
   bookdown::pdf_document2
 bibliography: references.bib
@@ -19,9 +18,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r,include=FALSE}
+# set up libraries
 library(tidyverse)
 library(ggplot2)
+library(kableExtra)
 library(modelsummary)
+library(broom)
+library(car)
+library(lmtest)
+library(stats)
 ```
 
 
@@ -29,69 +34,430 @@ library(modelsummary)
 
 ```{r,include=FALSE}
 # import data
-clean_data<-  read_csv(here::here("inputs/data/raw_data.csv"))
+clean_data<-  read_csv(here::here("inputs/data/cleaned_data.csv"))
+model.data <- clean_data %>%
+  filter(client_gender =="MALE"|client_gender =="FEMALE")
 ```
 
 
 
+
+
+
+
+
+```{r,include=FALSE}
+set.seed(1)
+rows <- sample(1:nrow(model.data), 30000, replace=FALSE) 
+data2<- model.data[rows,]
+
+train <- data2[sample((1:30000), 21000, replace=F), ]
+test <-  data2[which(!( data2$id %in% train$id)),]
+
+train$hosptial <-as.factor(train$hosptial) 
+test$hosptial <-as.factor(test$hosptial) 
+```
+
+
+```{r}
+unique(clean_data$client_gender)
+```
+
+```{r}
+sum(clean_data$client_gender=="TRANS WOMAN")
+```
+
+
+
+```{r}
+sum(clean_data$client_gender=="TRANSGENDER")
+```
+
 \newpage
 # Introduction
 
-Covid-19 is an infection disease first discovered in Wuhan, China in 2019 and then spread across the world. The disease spreads through small infected respiratory droplets, the infected droplets may direct contact with mouth, nose, or eyes and result in infection. COVID-19 is highly contagious, but the disease has a low fatality rate of less than 6% in the 20 most affected countries.
-Most infected people will have symptoms like fever, cough, tiredness, etc. These mild symptoms mainly affect the respiratory system and can be recovered in 5-6 days without hospitalization. 
-The article is structured as follows. We first introduced the background knowledge about COVID-19, then we will perform explanatory data analysis. The method section includes all the statistical methods we used in this paper. Then we built a poisson model to estimate COVID-19 cases in Ontario. Finally, we will discuss the limitations of our model and the next step.
+COVID-19 is an infection disease first discovered in Wuhan, China in 2019 and then spread across the world. The disease spreads through small infected respiratory droplets, the infected droplets may direct contact with mouth, nose, or eyes and result in infection. The use of face masks, vaccinations, and social distancing are effective preventative measures for COVID-19. Evidence shows that people who are unvaccinated have a larger death rate than people who are fully vaccinated. [@vaccine] Also, wash your hands often and avoid touching your mouth, nose, and eyes with unwashed hands. 
+
+COVID-19 is highly contagious, but the disease has a low fatality rate of less than 6% in the 20 most affected countries. Most infected people will have symptoms like fever, cough, tiredness, etc. These mild symptoms mainly affect the respiratory system and can be recovered in 10 days without hospitalization. If you experience symptoms like shortness of breath, chest pain, etc., you might need to seek emergency medical attention. However, some patients experience lingering health problems even when they have recovered from the acute phase of the illness. Common post-COVID syndrome includes loss or distortion of the sense of smell and taste, fatigue, chest pain, etc. 
+
+In this paper, we will focus on factors that increase the probability of getting severe COVID-19. Based on covid-19 cases data obtained from Open Data Toronto, we built a logistic model to predict the probability of COVID-19 patients getting severe symptoms. We found out that aged, male, sporadic patients are more likely to get severe symptoms that need hospitalization. If we keep age and outbreak associated cases fixed, the odds of requiring hospitalization for males are 1.5 times as large as the odds for females. Since we know from this report that male and aged people have a higher risk of severe illness from covid-19, we need to step up our advocacy and raise awareness of the importance of the COVID-19. We urge people to get vaccinated, wear face masks, and minimize going to crowded places.
+
+The article is structured as follows. We first introduced the background knowledge about COVID-19, then we will perform explanatory data analysis. The method section includes all the statistical methods we used in this paper. Then we compare different models and choose a preferred logistic model to estimate the probability of hospitalization of COVID-19 cases. Finally, we will discuss the limitations of our model and future steps.
+
 
 
 # Data
-
-
+ 
 
 ## Data collection
 
-
+To attempt an analysis of severe illness from COVID-19, I manipulated COVID-19 cases data. COVID-19 cases in Toronto dataset were managed by Toronto Public Health. These data are retrieved from Open data Toronto. The dataset was gathered in 2020 and it is refreshed and overwritten every Wednesday. It contains demographic and geographic information about every confirmed COVID-19 cases in Toronto.
 
 ## Data processing 
 
+All analyses were done with a statistic programming language R.[@citeR] We first use R packages "opendatatoronto"[@opendatatoronto] and "tidyverse" [@tidyverse]to import our data. Then I cleaned the names of variables and removed missing values for age. The data was done cleaning. 
 
-
-## Population and sample
-
-
+The raw dataset contains 32000 observations in total. I randomly selected 30000 observations to complete an exploratory analysis and modeling. I also set the seed as 1 so that every time we run the code, we can get the same result. The data was divided into two parts- training and test. Usually, the number of training data is more than the number of detection data, so I randomly selected 70% of data without replacement (21000 observations) as training data. We used the training data for model building and model selection. Then we fitted the optimum logistic model in the test dataset to see whether we can validate the optimum model. Table \@ref(tab:trainsummary) and Table \@ref(tab:testsummary) show a summary of important variables for both the training and test dataset. We can see that the different levels of each variable account for roughly the same proportion of the two datasets, so we believe that there is no significant difference between the training and test dataset. For example, 50.1% of the sample is female in the test dataset, and 49.7% of the sample is female in the training dataset.
 
 
 
 
+```{r trainsummary,echo=FALSE,warning=FALSE,message=FALSE}
+train %>% 
+  select(-hosptial,-neighbourhood_name,-fsa) %>%
+  datasummary_skim(type = "categorical",
+                   title = "Summary of categorical variables for training dataset")
+```
+
+
+
+
+```{r testsummary,echo=FALSE,warning=FALSE,message=FALSE}
+test %>% 
+  select(-hosptial,-neighbourhood_name,-fsa) %>%
+  datasummary_skim(type = "categorical",
+                   title = "Summary of categorical variables for test dataset")
+```
+
+
+
+## Data characteristics
+
+The dataset contains demographic (age group, gender) and geographic (patient’s neighborhood name and postal code), and severity (ever hospitalized, ever in ICU, outcome, etc.) information. This information is sensitive and it is possible to identify individuals either directly or indirectly. For example, if you see a case of a transgender patient in your community in the data, combined with age and FSA (first three characters of postal code), it is highly likely that you can identify that person.
+
+
+
+First, show an extract of our dataset (figure \@ref(datasummary)). We can tell that most variables are categorical variables. 
+
+```{r datasummary,echo=FALSE,warning=FALSE,message=FALSE}
+clean_data %>%
+  select(reported_date,age_group, client_gender, source_of_infection,neighbourhood_name,ever_hospitalized,outcome)%>%
+  slice(1:10) %>%
+  kable(
+    caption = "A glimpse of important varaibles",
+    col.names = c("Reported date","Age group","Gender","Source of infection","Neighbourhood name","Ever hospitalized", "outcome"),
+    digits = 1,
+    booktabs = TRUE, 
+    linesep = "",
+    align = c('l', 'l', 'c', 'c', 'c','c', 'r'),
+  ) 
+```
+
+
+
+
+
+
+
+```{r gender,echo=FALSE,warning=FALSE,message=FALSE}
+
+
+ggplot(data= clean_data,aes(x = client_gender,fill=ever_hospitalized)) + 
+geom_bar(alpha = 0.6,position="identity") +
+coord_flip() +
+labs(y="count", x="Gender",title = "Gender composition of hospitalized persons") +
+theme_minimal() 
+```
+From figure \@ref(fig:gender), The number of people who receive hospitalization is about the same for women and men.
+
+
+```{r piegraph,warning=FALSE,message=FALSE,echo = FALSE}
+library(plotrix)
+hospitcal_data <- clean_data %>%
+  filter(ever_hospitalized =="Yes")
+names = c("19 and younger",
+          "20 to 29 Years", 
+          "30 to 39 Years", 
+          "40 to 49 Years", 
+          "50 to 59 Years", 
+          "60 to 69 Years", 
+          "70 to 79 Years",
+          "80 to 89 Years",
+          "90 and older")
+# count the number of people for each main source of stress
+p1 <- sum(hospitcal_data$age_group =="19 and younger") 
+p2 <- sum(hospitcal_data$age_group =="20 to 29 Years")
+p3 <- sum(hospitcal_data$age_group =="30 to 39 Years")
+p4 <- sum(hospitcal_data$age_group =="40 to 49 Years")
+p5 <- sum(hospitcal_data$age_group =="50 to 59 Years")
+p6 <- sum(hospitcal_data$age_group =="60 to 69 Years")
+p7 <- sum(hospitcal_data$age_group =="70 to 79 Years")
+p8 <- sum(hospitcal_data$age_group =="80 to 89 Years")
+p9 <- sum(hospitcal_data$age_group =="90 and older")
+y=c(p1,p2,p3,p4,p5,p6,p7,p8,p9)
+pie3D(y, labels=names,explode=0.1,col = hcl.colors(length(y)),main ="Age composition of severe illness patients",labelcex = 0.75,theta = 1.5)
+
+```
+
+From figure \@ref(fig:piegraph), we can see that young and middle-aged patients only account for a quarter of severe illnesses of COVID-19. Most patients with severe symptoms are over 60 years old.  
+
+```{r fatal,warning=FALSE,message=FALSE,echo = FALSE}
+clean_data %>%
+  filter(ever_hospitalized =="Yes") %>%
+  ggplot(aes(x=outcome)) +
+  geom_bar(alpha = 0.6,position="identity",col=c("pink","purple"),fill=c("pink","purple")) +
+  labs(title="Outcome for COVID-19 patients") +
+  theme_minimal()
+  
+```
+
+From figure \@ref(fig:fatal), roughly 40% of all cases that were hospitalized related to their COVID-19 infection are fatal, which indicates there are no effective treatments for patients with severe symptoms of covid. 
+
+```{r source,warning=FALSE,message=FALSE,echo = FALSE}
+names = c("No Information", 
+          "Travel", 
+          "Community", 
+          "Close Contact", 
+          "Pending", 
+          "Household Contact", 
+          "Outbreaks, Healthcare Institutions",
+          "Outbreaks, Other Settings",
+          "Outbreaks, Congregate Settings")
+# count the number of people for each main source of stress
+a1 <- sum(clean_data$source_of_infection =="No Information") 
+a2 <- sum(clean_data$source_of_infection =="Travel")
+a3 <- sum(clean_data$source_of_infection =="Community")
+a4 <- sum(clean_data$source_of_infection =="Close Contact")
+a5 <- sum(clean_data$source_of_infection =="Pending")
+a6 <- sum(clean_data$source_of_infection =="Household Contact")
+a7 <- sum(clean_data$source_of_infection =="Outbreaks, Healthcare Institutions")
+a8 <- sum(clean_data$source_of_infection =="Outbreaks, Other Settings")
+a9 <- sum(clean_data$source_of_infection =="Outbreaks, Congregate Settings")
+a=c(a1,a2,a3,a4,a5,a6,a7,a8)
+# calculate the percentage
+piepercent = paste(round(100*y/sum(y)), "%")
+pie(y, labels=piepercent,col = hcl.colors(length(a), "Spectral"), main ="Source of infection")
+legend("topright", names, cex=0.5, fill=hcl.colors(length(a), "Spectral"))
+```
+
+From figure \@ref(fig:source), the source of infection in half of the cases is unknown and cannot be speculated. Household contact and close contact with covid positive are also important causes of COVID-19 infection. 10% of COVID patients are infected in healthcare institutions. Healthcare Institutions include hospitals, retirement homes, etc. Usually, people who go to the healthcare institutions for help are mainly the aged population. These people are in poor health conditions and have lower immunity, which makes them more susceptible to viral infections. 
+
+
+# Model
+
+To find out what factors can make you seriously ill after getting covid, I performed logistic regression using R. Through the logistic regression model, I was unable to define causality, but rather explore the relationship between different variables. Since patients with mild symptoms can be recovered in a few days without hospitalization, I consider those who are hospitalized as severe illness of COVID-19. I set “ever hospitalized” as the explanatory variable. The variable “ever hospitalized” is a binary variable with two levels: Yes and No, which is an appropriate structure of the outcome variable. I recoded the “ever hospitalized” and set the outcome variable to be 1 if the patient received hospitalization, and 0 if vice versa. The logistic model is constructed using the R package “stats”.[@stats]
+
+The general form of logistic model is :
+
+$log(\frac{\hat{p}}{1-\hat{p}}) = X_i\beta$
+
+- $\hat{p}$ is the probability of hospitalization given $X_i$
+- $X_i$ are covariates for observation i
+- $\beta$ is a vector of regression coefficients
+
+I will compare 3 logistic regression models, each with different independent variables, and ultimately choose the optimum model.
+
+## Model construction
+### Model 1 
+First, I would like to examine the effect of gender and age on the probability of hospitalization.
+
+The first model is :
+
+$log(\frac{p}{1-p})=\beta_0+\beta_1Client \ gender+\beta_2Age \ group$
+The probability of hospitalization is :
+$\hat{p}=\frac{e^{\hat{\beta_0}+\hat{\beta_1}Client \ gender+\hat{\beta_2}Age \ group}}{e^{\beta_0+\hat{\beta_1}Client \ gender+\hat{\beta_2}Age \ group}+1}$
+
+
+### Model 2 (final model)
+
+On the basis of model 1, I want to study the effect of the variable “outbreak associated”. This variable tells us whether the case is associated with a healthcare institution or not. 
+
+The second model is :
+
+$log(\frac{p}{1-p}) = \beta_0 + \beta_1Outbreak \ associated + \beta_2Client \ gender + \beta_3Age \ group$
+
+The probability of hospitalization is :
+$\hat{p}=\frac{e^{\hat{\beta_0}+ \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender +\hat{\beta_3}Age \ group}}{e^{\hat{\beta_0} + \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender + \hat{\beta_3}Age \ group}+1}$
+
+
+
+
+
+
+
+### Model 3
+Based on model 2, I am also interested in whether the interaction term of outbreak associated and gender affect the probability of severe illness of COVID-19.
+
+The third model is :
+
+$log(\frac{p}{1-p}) = \beta_0 + \beta_1Outbreak \ associated + \beta_2Client \ gender + \beta_3Age \ group +\beta_4Client \ gender:Outbreak \ associated$
+
+The probability of hospitalization is :
+
+$\hat{p}=\frac{e^{\hat{\beta_0}+ \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender +\hat{\beta_3}Age \ group+\hat{\beta_4}Client \ gender:Outbreak \ associated}}{e^{\hat{\beta_0} + \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender + \hat{\beta_3}Age \ group+\hat{\beta_4}Client \ gender:Outbreak \ associated}+1}$
+
+
+
+After model construction, I will select the best model in the next step. Then model assumptions will be checked and the preferred model is tested with test data to see if it can be validated.
 
 
 
 # Result
 
+After plugging in the data, we obtained the regression coefficients for the three models. 
+
+The first model is :
+
+$log(\frac{\hat{p}}{1-\hat{p}}) = -5.5164+0.434Client \ gender_{Male} + 0.5701Age \ group_{20-29 \ years}+0.8237Age \ group_{30-39 \ years}+1.5476Age \ group_{40-49 \ years} +2.0775Age \ group_{50-59 \ years} +3.0685Age \ group_{60-69 \ years} +4.2582Age \ group_{70-79 \ years}+4.6742Age \ group_{80-89 \ years} +4.4333Age \ group_{90 +}$
+
+```{r ,include=FALSE}
+mod1 <- glm(hosptial~client_gender + age_group, family = "binomial", data = train)
+summary(mod1)
+```
+Table \@ref(tab:model1) shows a summary of model 1. Most of the predictors are statistically significant at a 0.05 significant level. 
+
+```{r model1,echo=FALSE,warning = FALSE,message=FALSE}
+# build a table to show summary of model 1
+kbl(broom::tidy(mod1)[,],caption = "A summary of model 1", digits = 4, format="markdown",align="ccccc",padding =3)
+```
+
+
+
+The second model is :
+
+$log(\frac{\hat{p}}{1-\hat{p}}) =-5.7373 +0.279 Outbreak \ associated_{Sporadic} + 0.4189	Client \ gender_{Male} + 0.537Age \ group_{20-29 \ years}+0.7959Age \ group_{30-39 \ years}+1.5287Age \ group_{40-49 \ years} +2.0612Age \ group_{50-59 \ years} +3.0585Age \ group_{60-69 \ years} + 4.2752Age \ group_{70-79 \ years}+4.7766Age \ group_{80-89 \ years} +4.61334Age \ group_{90 +}$
+
+Table \@ref(tab:model2) shows a summary of model 2.
+
+```{r,include=FALSE}
+mod2 <- glm(hosptial~outbreak_associated+client_gender + age_group, family = "binomial",data = train)
+summary(mod2)
+```
+
+
+```{r model2,echo=FALSE,warning = FALSE,message=FALSE}
+# build a table to show summary of model 2
+kbl(broom::tidy(mod2)[,],caption = "A summary of model 2", digits = 4, format="markdown",align="ccccc",padding =3)
+```
+
+
+
+
+The third model is :
+
+$log(\frac{\hat{p}}{1-\hat{p}}) =-5.8792 +0.4807 Outbreak \ associated_{Sporadic} + 0.707	Client \ gender_{Male} + 0.5474Age \ group_{20-29 \ years}+0.8055Age \ group_{30-39 \ years}+1.5366Age \ group_{40-49 \ years} +2.0678Age \ group_{50-59 \ years} +3.0633Age \ group_{60-69 \ years} + 4.2713Age \ group_{70-79 \ years}+4.7898Age \ group_{80-89 \ years} +4.6534Age \ group_{90 +}-0.4029 Outbreak \ associated_{Sporadic}:Client \ gender_{Male}$
+
+```{r ,include=FALSE}
+mod3 <- glm(hosptial~outbreak_associated+client_gender+age_group+client_gender:outbreak_associated,  family = "binomial", data = train)
+summary(mod3)
+```
+Table \@ref(tab:model3) shows a summary of model 3.
+
+```{r model3,echo=FALSE,warning = FALSE,message=FALSE}
+# build a table to show summary of model 3
+kbl(broom::tidy(mod3)[,],caption = "A summary of model 3", digits = 4, format="markdown",align="ccccc",padding =3)
+```
+
+
+
+In order to figure out the optimum model, the likelihood ratio test is performed. The likelihood ratio test helps us access the goodness of fits by maximizing the entire parameter space, which is difficult and time-consuming to calculate by hand. I used the R function "lrtest( )" from R package "lmtest" [@lmtest] to run the test. The two models to be compared must be nested. 
+
+In this case, model 1 is a subset of model 2, so the two models are nested. Table \@ref(tab:compare12) shows a likelihood ratio test to compare model 1 and model 2. From table \@ref(tab:compare12), the p-value is 0.0012, which is smaller than 0.05, so we have strong evidence against the null hypothesis that the reduced model (mode 1) better explains the COVID-19 cases data. In conclusion, we believe that model 2 (full model) better explains our data. 
+
+```{r compare12,echo=FALSE,warning = FALSE,message=FALSE}
+# Use likelihood ratio test to compare model1 and model2 (full)
+# make a table to show the likelihood ratio test
+knitr::kable(lmtest::lrtest(mod1,mod2),caption="Comparison of model 1 and model 2 using the likelihood ratio test") %>%
+  kable_styling("striped", full_width = F) 
+```
+
+Model 2 is a subset of model 3, so I performed a likelihood ratio test to compare mode 2 and model 3. (Table \@ref(tab:compare23)) From table \@ref(tab:compare23), the p-value is 0.068, which is greater than 0.05, so we reject the null hypothesis ($H_0$) that model 2 better explains the COVID-19 cases data. Compared to model 3, model 2 better explains the data. In conclusion, model 2 is the optimum model. 
+
+```{r compare23,echo=FALSE,warning = FALSE,message=FALSE}
+# Use likelihood ratio test to compare model 2 and model 3
+# make a table to show the likelihood ratio test
+knitr::kable(lmtest::lrtest(mod3,mod2),caption="Comparison of model 2 and model 3 using the likelihood ratio test") %>%
+  kable_styling("striped", full_width = F) 
+```
+
+# Model interpretation
+The optimum model is :
+
+$log(\frac{\hat{p}}{1-\hat{p}}) =-5.7373 +0.279 Outbreak \ associated_{Sporadic} + 0.4189	Client \ gender_{Male} + 0.537Age \ group_{20-29 \ years}+0.7959Age \ group_{30-39 \ years}+1.5287Age \ group_{40-49 \ years} +2.0612Age \ group_{50-59 \ years} +3.0585Age \ group_{60-69 \ years} + 4.2752Age \ group_{70-79 \ years}+4.7766Age \ group_{80-89 \ years} +4.61334Age \ group_{90 +}$
+
+- Outbreak associated
+When all other predictors except outbreak associated remain the same, the odds of hospitalization for an outbreak-associated patient is 1.3218 ($e^{0.279}$) times large as the odds of hospitalization for a sporadic patient.
+- Gender 
+When all other predictors except sex remain the same, the odds of hospitalization for a male is 1.5203 times as large as the odds for a female being admitted to a hospital.
+- Age group
+When all other predictors except age group remain the same, the odds of hospitalization for a patient aged 20-29 is 1.711 times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 30-39 is 2.2164 ($e^{0.7959}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 40-49 is 4.6122 ($e^{1.5287}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 50-59 is 7.8554 ($e^{2.0612}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 60-69 is 21.2656 ($e^{3.0585}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 70-79 is 71.9017 ($e^{4.2753}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 80-89 is 118.7($e^{4.7766}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged over 90 is 104.9412 ($e^{4.6534}$) times as large as the odds for a patient aged below 20. 
+
+# Model assumption
+
+
+After selecting the model, I will check whether the assumptions of the model are satisfied. It is important to check the assumptions of the model because if the assumptions of the model are not satisfied, it will lead to inaccurate predictions.
+The first assumption is the appropriate outcome type. Our response variable is supposed to be a binary variable. For our optimum model, the response variable "ever hospitalized" has two levels, Yes and No, which means the first assumption is met. Secondly, I used residual plot to check the independence assumption. From figure \@ref(fig:residual), the residuals are roughly randomly centralized around 0, so the independence assumption holds. Thirdly, we want to ensure the absence of multicollinearity. Multicollinearity refers to a strong linear relationship between predictors, which might result in non-significant predictors, weakened statistical power of our logistic model etc. Multicollinearity is accessed through VIF value, a predictor with a VIF value that exceeds 5 indicates strong multicollinearity, which suggests the predictor might need to be removed. From table \@ref(tab:vif), since no VIF values exceed 5, we can conclude the absence of multicollinearity assumption is satisfied.  
+
+
+
+```{r residual,echo=FALSE,warning = FALSE,message=FALSE}
+train$ever_hospitalized <- as.factor(train$ever_hospitalized)
+m <- glm(ever_hospitalized~outbreak_associated+client_gender + age_group, family = "binomial",data = train)
+
+# Extract model results
+modeldata <- augment(m) %>% 
+  mutate(index = 1:n())
+
+ggplot(modeldata, aes(index, .std.resid)) + 
+  geom_point(aes(color = ever_hospitalized), alpha = .5) +
+  labs(title="Residual Series Plot",y="Residual", x="Index") +
+  theme_bw() 
+```
 
 
 
 
 
+```{r vif,echo=FALSE,warning = FALSE,message=FALSE}
+
+knitr::kable(car::vif(mod2),caption="VIF values for different predictors") %>%
+  kable_styling("striped", full_width = F)
+
+```
 
 
 
 
 
+## model validation
+
+Data validation is an important process to be carried out after model selection, it is a way to evaluate the effectiveness of our optimum model. In this report, the test dataset was used for data validation. I fitted the preferred model using the test dataset, and table \@ref(tab:m2test) shows a summary of the preferred in the test dataset. Comparing table 3 and table 9, we find out that the same predictors are statistically significant in both training and test datasets. 
+As for model assumption, the response variable is a binary variable, which indicates the assumption of appropriate outcome type holds. Figure \@ref(fig:testresidual) shows the independence assumption holds. Table \@ref(tab:testvif) shows the absence of multicollinearity is satisfied. Overall, there is no more serious assumption violation in the test dataset.
+As for the model coefficients, the difference of coefficients of client gender male, outbreak_associatedSporadic are bigger than the standard error of the corresponding coefficient using the training dataset. For example, the difference of coefficient for age group between 20 and 29 is 1.7706, which is larger than 0.2969 (the standard error for age group between 20 and 29 in the training dataset). The difference of coefficients of other terms is within the standard error of corresponding coefficients of the training dataset. 
+Overall, most conditions are satisfied, so we believe that the optimum is validated. 
+
+```{r ,include=FALSE}
+m2test <- glm(hosptial~outbreak_associated+client_gender + age_group, family = "binomial",data = test)
+summary(m2test)
+```
+
+```{r m2test,echo=FALSE,warning = FALSE,message=FALSE}
+# build a table to show summary of model 2 using test dataset
+kbl(broom::tidy(m2test)[,],caption = "A summary of model 2 using test dataset", digits = 4, format="markdown",align="ccccc",padding =3)
+```
 
 
 
 
+```{r testvif,echo=FALSE,warning = FALSE,message=FALSE}
+knitr::kable(car::vif(m2test),caption="VIF values for different predictors using test dataset") %>%
+  kable_styling("striped", full_width = F)
+```
 
 
+```{r testresidual,echo=FALSE,warning = FALSE,message=FALSE}
+test$ever_hospitalized <- as.factor(test$ever_hospitalized)
+t <- glm(ever_hospitalized~outbreak_associated+client_gender + age_group, family = "binomial",data = train)
 
+# Extract model results
+testdata <- augment(t) %>% 
+  mutate(index = 1:n())
 
-
-
-
-
-
-
-
-
+ggplot(testdata, aes(index, .std.resid)) + 
+  geom_point(aes(color = ever_hospitalized), alpha = .5) +
+  labs(title="Residual Series Plot for test dataset",y="Residual", x="Index") +
+  theme_bw() 
+```
 
 
 
@@ -111,6 +477,141 @@ The article is structured as follows. We first introduced the background knowled
 \newpage
 # Appendix
 
+**Motivation**
+
+1. *For what purpose was the dataset created? Was there a specific task in mind? Was there a specific gap that needed to be filled? Please provide a description.*
+    - The dataset was created to enable analysis of the probability of covid-19 patients requiring hospitalization. There was no specific gap that needed to be filled.
+2. *Who created the dataset (for example, which team, research group) and on behalf of which entity (for example, company, institution, organization)?*
+    - The dataset is  managed by Toronto Public Health.The data are extracted from the provincial Case & Contact Management System.
+3. *Who funded the creation of the dataset? If there is an associated grant, please provide the name of the grantor and the grant name and number.*
+    - The data is funded by City of Toronto government in Toronto, Ontario, Canada. 
+4. *Any other comments?*
+    - No
+
+**Composition**
+
+1. *What do the instances that comprise the dataset represent (for example, documents, photos, people, countries)? Are there multiple types of instances (for example, movies, users, and ratings; people and interactions between them; nodes and edges)? Please provide a description.*
+	- This data contains all confirmed and probable COVID-19 cases reported to Toronto Public Health. Each observation of the dataset is an individual.
+2. *How many instances are there in total (of each type, if appropriate)?*
+	- There are 31997 observations in the clean data. 
+3. *Does the dataset contain all possible instances or is it a sample (not necessarily random) of instances from a larger set? If the dataset is a sample, then what is the larger set? Is the sample representative of the larger set (for example, geographic coverage)? If so, please describe how this representativeness was validated/verified. If it is not representative of the larger set, please describe why not (for example, to cover a more diverse range of instances, because instances were withheld or unavailable).*
+	- The dataset contains all confirmed and probable COVID-19 cases in Toronto. It can be considered as s subset of COVID-19 cases in Ontario.
+4. *What data does each instance consist of? "Raw" data (for example, unprocessed text or images) or features? In either case, please provide a description.*
+	- Each instance consist of demographic (age group, gender) and geographic (patient’s neighborhood name and postal code), and severity (ever hospitalized, ever in icu, outcome etc.) information. 
+5. *Is there a label or target associated with each instance? If so, please provide a description.*
+	- Yes, every observation has a unique assigned ID. 
+6. *Is any information missing from individual instances? If so, please provide a description, explaining why this information is missing (for example, because it was unavailable). This does not include intentionally removed information, but might include, for example, redacted text.*
+	- Age group, neighborhood name and fsa is not available in all cases. If the patient is not a Canadian citizen, but a visitor, information such as neighborhood name and fsa may be missing.
+7. *Are relationships between individual instances made explicit (for example, users' movie ratings, social network links)? If so, please describe how these relationships are made explicit.*
+	- Yes, through the unique assigned ID.
+8. *Are there recommended data splits (for example, training, development/validation, testing)? If so, please provide a description of these splits, explaining the rationale behind them.*
+	- No. In this paper, 70% of the dataset goes into the training set and 20% of the dataset goes into the testing set. 
+9. *Are there any errors, sources of noise, or redundancies in the dataset? If so, please provide a description.*
+	- NO.
+10. *Is the dataset self-contained, or does it link to or otherwise rely on external resources (for example, websites, tweets, other datasets)? If it links to or relies on external resources, a) are there guarantees that they will exist, and remain constant, over time; b) are there official archival versions of the complete dataset (that is, including the external resources as they existed at the time the dataset was created); c) are there any restrictions (for example, licenses, fees) associated with any of the external resources that might apply to a dataset consumer? Please provide descriptions of all external resources and any restrictions associated with them, as well as links or other access points, as appropriate.*
+	- The dataset rely on open data Toronto website. The data are subject to change as public health investigations into reported cases are ongoing. The consumer should follow Open Data License. The dataset is available from https://open.toronto.ca/dataset/covid-19-cases-in-toronto/.  
+11. *Does the dataset contain data that might be considered confidential (for example, data that is protected by legal privilege or by doctor-patient confidentiality, data that includes the content of individuals' non-public communications)? If so, please provide a description.*
+	- Yes. The datast contains information whether you are incubated, whether you are admitted to ICU.
+12. *Does the dataset contain data that, if viewed directly, might be offensive, insulting, threatening, or might otherwise cause anxiety? If so, please describe why.*
+	- No.
+13. *Does the dataset identify any sub-populations (for example, by age, gender)? If so, please describe how these subpopulations are identified and provide a description of their respective distributions within the dataset.*
+	- Yes. The dataset identifies sub-populations by age, gender, and neighborhood name.
+14. *Is it possible to identify individuals (that is, one or more natural persons), either directly or indirectly (that is, in combination with other data) from the dataset? If so, please describe how.*
+	- Yes. It is likely to identify someone combined with age group, gender, neighborhood name, and other datasets.
+15. *Does the dataset contain data that might be considered sensitive in any way (for example, data that reveals race or ethnic origins, sexual orientations, religious beliefs, political opinions or union memberships, or locations; financial or health data; biometric or genetic data; forms of government identification, such as social security numbers; criminal history)? If so, please provide a description.*
+	- The dataset contains sensitive information, such as neighborhood name, and whether they are incubated or admitted to ICU.
+16. *Any other comments?*
+	- No
+	
+**Collection process**
+
+1. *How was the data associated with each instance acquired? Was the data directly observable (for example, raw text, movie ratings), reported by subjects (for example, survey responses), or indirectly inferred/derived from other data (for example, part-of-speech tags, model-based guesses for age or language)? If the data was reported by subjects or indirectly inferred/derived from other data, was the data validated/verified? If so, please describe how.*
+	- The data ware gathered from the  provincial Case & Contact Management System.
+2. *What mechanisms or procedures were used to collect the data (for example, hardware apparatuses or sensors, manual human curation, software programs, software APIs)? How were these mechanisms or procedures validated?*
+	- The dataset was downloaded from Open Data Toronto.
+3. *If the dataset is a sample from a larger set, what was the sampling strategy (for example, deterministic, probabilistic with specific sampling probabilities)?*
+	- The dataset is not a sample.
+4. *Who was involved in the data collection process (for example, students, crowdworkers, contractors) and how were they compensated (for example, how much were crowdworkers paid)?*
+	- The dataset was collected by Toronto Public Health.
+5. *Over what timeframe was the data collected? Does this timeframe match the creation timeframe of the data associated with the instances (for example, recent crawl of old news articles)? If not, please describe the timeframe in which the data associated with the instances was created.*
+	- The data was collected from January 2020 to now. It is updated on a weekly basis.
+6. *Were any ethical review processes conducted (for example, by an institutional review board)? If so, please provide a description of these review processes, including the outcomes, as well as a link or other access point to any supporting documentation.*
+	- No.
+7. *Did you collect the data from the individuals in question directly, or obtain it via third parties or other sources (for example, websites)?*
+	- The data was collected by Toronto Public Health.
+8. *Were the individuals in question notified about the data collection? If so, please describe (or show with screenshots or other information) how notice was provided, and provide a link or other access point to, or otherwise reproduce, the exact language of the notification itself.*
+	- No.
+9. *Did the individuals in question consent to the collection and use of their data? If so, please describe (or show with screenshots or other information) how consent was requested and provided, and provide a link or other access point to, or otherwise reproduce, the exact language to which the individuals consented.*
+	- No.
+10. *If consent was obtained, were the consenting individuals provided with a mechanism to revoke their consent in the future or for certain uses? If so, please provide a description, as well as a link or other access point to the mechanism (if appropriate).*
+	- No.
+11. *Has an analysis of the potential impact of the dataset and its use on data subjects (for example, a data protection impact analysis) been conducted? If so, please provide a description of this analysis, including the outcomes, as well as a link or other access point to any supporting documentation.*
+	- No.
+12. *Any other comments?*
+	- No
+
+**Preprocessing/cleaning/labeling**
+
+1. *Was any preprocessing/cleaning/labeling of the data done (for example, discretization or bucketing, tokenization, part-of-speech tagging, SIFT feature extraction, removal of instances, processing of missing values)? If so, please provide a description. If not, you may skip the remaining questions in this section.*
+	- Yes, cleaning of the data was done. Missing values of age is removed.
+2. *Was the "raw" data saved in addition to the preprocessed/cleaned/labeled data (for example, to support unanticipated future uses)? If so, please provide a link or other access point to the "raw" data.*
+	- Yes. It is available through Github.
+3. *Is the software that was used to preprocess/clean/label the data available? If so, please provide a link or other access point.*
+	- R was used.
+4. *Any other comments?*
+	- No
+
+**Uses**
+
+1. *Has the dataset been used for any tasks already? If so, please provide a description.*
+	- No.
+2. *Is there a repository that links to any or all papers or systems that use the dataset? If so, please provide a link or other access point.*
+	- No.
+3. *What (other) tasks could the dataset be used for?*
+	- The data can be used to analyze the Toronto epidemic.
+4. *Is there anything about the composition of the dataset or the way it was collected and preprocessed/cleaned/labeled that might impact future uses? For example, is there anything that a dataset consumer might need to know to avoid uses that could result in unfair treatment of individuals or groups (for example, stereotyping, quality of service issues) or other risks or harms (for example, legal risks, financial harms)? If so, please provide a description. Is there anything a dataset consumer could do to mitigate these risks or harms?*
+	- No.
+5. *Are there tasks for which the dataset should not be used? If so, please provide a description.*
+	- No.
+6. *Any other comments?*
+	- No.
+
+**Distribution**
+
+1. *Will the dataset be distributed to third parties outside of the entity (for example, company, institution, organization) on behalf of which the dataset was created? If so, please provide a description.*
+	- The dataset is available from https://open.toronto.ca/dataset/covid-19-cases-in-toronto/.  
+2. *How will the dataset be distributed (for example, tarball on website, API, GitHub)? Does the dataset have a digital object identifier (DOI)?*
+	- The dataset is distributed through API.
+3. *When will the dataset be distributed?*
+	- The dataset was first published in January 2020. 
+4. *Will the dataset be distributed under a copyright or other intellectual property (IP) license, and/or under applicable terms of use (ToU)? If so, please describe this license and/ or ToU, and provide a link or other access point to, or otherwise reproduce, any relevant licensing terms or ToU, as well as any fees associated with these restrictions.*
+	- The dataset is under Open Data License.
+5. *Have any third parties imposed IP-based or other restrictions on the data associated with the instances? If so, please describe these restrictions, and provide a link or other access point to, or otherwise reproduce, any relevant licensing terms, as well as any fees associated with these restrictions.*
+	- None that are known.
+6. *Do any export controls or other regulatory restrictions apply to the dataset or to individual instances? If so, please describe these restrictions, and provide a link or other access point to, or otherwise reproduce, any supporting documentation.*
+	- None that are known.
+7. *Any other comments?*
+	- No.
+
+**Maintenance**
+
+1. *Who will be supporting/hosting/maintaining the dataset?*
+	- The dataset is supported by Toronto Public Health.
+2. *How can the owner/curator/manager of the dataset be contacted (for example, email address)?*
+	- The publisher's email is edau@toronto.ca.
+3. *Is there an erratum? If so, please provide a link or other access point.*
+	- No.
+4. *Will the dataset be updated (for example, to correct labeling errors, add new instances, delete instances)? If so, please describe how often, by whom, and how updates will be communicated to dataset consumers (for example, mailing list, GitHub)?*
+	- The dataset will be refreshed and overwritten every Wednesday. The dataset is available from https://open.toronto.ca/dataset/covid-19-cases-in-toronto/. 
+5. *If the dataset relates to people, are there applicable limits on the retention of the data associated with the instances (for example, were the individuals in question told that their data would be retained for a fixed period of time and then deleted)? If so, please describe these limits and explain how they will be enforced.*
+	- No.
+6. *Will older versions of the dataset continue to be supported/hosted/maintained? If so, please describe how. If not, please describe how its obsolescence will be communicated to dataset consumers.*
+	- No.The data is just updated.
+7. *If others want to extend/augment/build on/contribute to the dataset, is there a mechanism for them to do so? If so, please provide a description. Will these contributions be validated/verified? If so, please describe how. If not, why not? Is there a process for communicating/distributing these contributions to dataset consumers? If so, please provide a description.*
+	- No.
+8. *Any other comments?*
+	- No.
+
 
 \newpage
 # Reference
@@ -124,17 +625,10 @@ Mortality analyses. Johns Hopkins Coronavirus Resource Center. (n.d.). Retrieved
 
 World Health Organization. (n.d.). Coronavirus. World Health Organization. Retrieved March 31, 2022, from https://www.who.int/health-topics/coronavirus#tab=tab_1 
 
-H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New 
-York, 2016.
 
 
-R Core Team (2021). R: A language and environment for statistical computing. R 
-Foundation for Statistical Computing, Vienna, Austria. URL
-https://www.R-project.org/.
+
   
-Vincent Arel-Bundock (2022). modelsummary: Summary Tables and Plots for Statistical Models and Data: Beautiful, Customizable, and Publication-Ready. R
-package version 0.9.6. https://CRAN.R-project.org/package=modelsummary
-  
-Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source 
-Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
-  
+
+
+
