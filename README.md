@@ -1,18 +1,14 @@
-# Estimation of COVID-19 cases in Ontario
-
-This repo provides an estimation of COVID-19 cases in Ontario. We focus on how gender and age group affect the probability of getting COVID-19. The COIVD-19 dataset is open data obtained from Ontario Data Catalogue.
+# Elderly, Male, Sporadic Population is More Likely to Get Severe COVID-19
+This repo provides an estimation of the probability of developing severe COVID-19 symptoms. We focus on how gender and age group affect the probability of getting COVID-19. The COIVD-19 dataset is open data obtained from Open Data Toronto.
 
 
 ## File Structure
 
-Inputs contains the raw data downloaded from Ontario Data Catalogue.
+Inputs contains the raw data downloaded from Open Data Toronto.
 
-Outputs are consist of paper and data. Data contains the raw data and cleaned data. Paper contains the rmd and pdf file of our paper.
+Outputs are consist of the rmd and pdf file of "Elderly, Male, Sporadic Population is More Likely to Get Severe COVID-19" paper.
 
 Scripts are consist of the R script about gathering data, data cleaning and preparation and data stimulation.
-
-
-
 
 
 

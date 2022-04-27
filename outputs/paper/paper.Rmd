@@ -1,10 +1,13 @@
 ---
-title: "Estimation of COVID-19 cases in Ontario"
+title: "Elderly, Male, Sporadic Population is More Likely to Get Severe COVID-19"
+subtitle: "A estimation of the probability of developing severe COVID-19 using logistic model"
 author:
 - Zihan Zhang
-thanks: "Code and data are available at: https://github.com/zihanjasmine/Estimation-of-COVID-19-cases-in-Ontario."
+thanks: "Code and data are available at: https://github.com/zihanjasmine/Estimation-of-the-probability-of-severe-illness-of-COVID-19"
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: " COVID-19 is a respiratory disease first discovered in 2019 and then spread across the world. Many people may be facing an increased level of anxiety and stress. In this report, we built a poisson model to estimate the COVID 19 cases in Ontario. We focus on how gender and age group affect the probability of getting COVID-19. "
+abstract: "COVID-19 is a respiratory disease first discovered in 2019 and then spread across the world. In this report, a logistic model was built using the programming language R to estimate the probability of severe illness of COVID. The results show that elderly, male population is at high risk for developing severe COVID-19 symptoms. This article illustrates the high-risk population for COVID-19 and suggests a new direction for studying the causes of severe COVID-19 that requires hospitalization.
+ \\par
+ \\textbf {Keywords:}  logistic regression, severe illness of COVID-19, open data toronto" 
 output:
   bookdown::pdf_document2
 bibliography: references.bib
@@ -40,12 +43,6 @@ model.data <- clean_data %>%
 ```
 
 
-
-
-
-
-
-
 ```{r,include=FALSE}
 set.seed(1)
 rows <- sample(1:nrow(model.data), 30000, replace=FALSE) 
@@ -59,30 +56,18 @@ test$hosptial <-as.factor(test$hosptial)
 ```
 
 
-```{r}
-unique(clean_data$client_gender)
-```
 
-```{r}
-sum(clean_data$client_gender=="TRANS WOMAN")
-```
-
-
-
-```{r}
-sum(clean_data$client_gender=="TRANSGENDER")
-```
 
 \newpage
 # Introduction
 
-COVID-19 is an infection disease first discovered in Wuhan, China in 2019 and then spread across the world. The disease spreads through small infected respiratory droplets, the infected droplets may direct contact with mouth, nose, or eyes and result in infection. The use of face masks, vaccinations, and social distancing are effective preventative measures for COVID-19. Evidence shows that people who are unvaccinated have a larger death rate than people who are fully vaccinated. [@vaccine] Also, wash your hands often and avoid touching your mouth, nose, and eyes with unwashed hands. 
+COVID-19 is an infection disease first discovered in Wuhan, China, in 2019, which then spread across the world. The disease primarily spreads through the direct contact of small infected respiratory droplets with open mucus membranes, such as mouth, nose, or eyes. The use of face masks, vaccinations, and social distancing are effective preventative measures for COVID-19. Evidence shows that people who are unvaccinated have a higher death rate than people who are fully vaccinated [@vaccine]. Moreover, washing your hands often and avoid touching your mouth, nose, and eyes also reduces the likelihood of being infected. 
 
-COVID-19 is highly contagious, but the disease has a low fatality rate of less than 6% in the 20 most affected countries. Most infected people will have symptoms like fever, cough, tiredness, etc. These mild symptoms mainly affect the respiratory system and can be recovered in 10 days without hospitalization. If you experience symptoms like shortness of breath, chest pain, etc., you might need to seek emergency medical attention. However, some patients experience lingering health problems even when they have recovered from the acute phase of the illness. Common post-COVID syndrome includes loss or distortion of the sense of smell and taste, fatigue, chest pain, etc. 
+COVID-19 is highly contagious, but the disease has a low fatality rate of less than 6% in the 20 most affected countries. Most infected people will develop symptoms such as fever, cough, tiredness, etc. These mild symptoms mainly affect the respiratory system, and those affected can recover in 10 days without hospitalization. If you experience symptoms like shortness of breath, chest pain, etc., you might need to seek emergency medical attention. However, some patients experience lingering health problems even when they have recovered from the acute phase of the illness. Some common post-COVID syndromes include loss or distortion of the sense of smell and taste, fatigue, chest pain, etc. 
 
-In this paper, we will focus on factors that increase the probability of getting severe COVID-19. Based on covid-19 cases data obtained from Open Data Toronto, we built a logistic model to predict the probability of COVID-19 patients getting severe symptoms. We found out that aged, male, sporadic patients are more likely to get severe symptoms that need hospitalization. If we keep age and outbreak associated cases fixed, the odds of requiring hospitalization for males are 1.5 times as large as the odds for females. Since we know from this report that male and aged people have a higher risk of severe illness from covid-19, we need to step up our advocacy and raise awareness of the importance of the COVID-19. We urge people to get vaccinated, wear face masks, and minimize going to crowded places.
+In this paper, I will focus on factors that increase the probability of developing severe COVID-19 symptoms. Based on COVID-19 cases data obtained from Open Data Toronto, a logistic model was built to predict the probability of COVID-19 patients getting severe symptoms. The evidence suggests that aged, male, and sporadic patients are more likely to develop severe symptoms that require hospitalization. Sporadic patients means the patients' virus infection is not associated with healthcare institutions. If age and outbreak associated cases remains the same, the odds of males requiring hospitalization are 1.5 times larger than the odds for females. Since this report suggests that male and aged people have a higher risk of severe illness from COVID-19, more efforts should be made to step up advocacy and raise awareness of the importance of COVID-19 preventative measures. I urge people to get vaccinated, wear face masks, and minimize going to crowded places. 
 
-The article is structured as follows. We first introduced the background knowledge about COVID-19, then we will perform explanatory data analysis. The method section includes all the statistical methods we used in this paper. Then we compare different models and choose a preferred logistic model to estimate the probability of hospitalization of COVID-19 cases. Finally, we will discuss the limitations of our model and future steps.
+The article is structured as follows. This paper first provides an introduction to the background knowledge about COVID-19. Then data collection, data processing and data charactistic are included in data section. The model section is consists of model assumption, model construction and model validation. Model selection and interpretation are shown in the result section. Finally, discussion is comprised of three parts: summary, findings, and limitation & future work. 
 
 
 
@@ -91,15 +76,15 @@ The article is structured as follows. We first introduced the background knowled
 
 ## Data collection
 
-To attempt an analysis of severe illness from COVID-19, I manipulated COVID-19 cases data. COVID-19 cases in Toronto dataset were managed by Toronto Public Health. These data are retrieved from Open data Toronto. The dataset was gathered in 2020 and it is refreshed and overwritten every Wednesday. It contains demographic and geographic information about every confirmed COVID-19 cases in Toronto.
+In attempts to generate an analysis of severe symptom of COVID-19, I manipulated "COVID-19 Cases in Toronto" dataset, managed by Toronto Public Health. The data is retrieved from Open data Toronto. The dataset was gathered in 2020 and it is being refreshed and overwritten every Wednesday. It contains demographic and geographic information about every confirmed COVID-19 cases in Toronto. 
 
 ## Data processing 
 
-All analyses were done with a statistic programming language R.[@citeR] We first use R packages "opendatatoronto"[@opendatatoronto] and "tidyverse" [@tidyverse]to import our data. Then I cleaned the names of variables and removed missing values for age. The data was done cleaning. 
+All analyses were done with a statistic programming language R [@citeR]. I first used R packages "opendatatoronto"[@opendatatoronto] and "tidyverse" [@tidyverse]to to import data. Then I cleaned the names of variables and removed missing values for age. The data was done cleaning. R packages "ggplot2" [@ggplot2] and "KableExtra" [@kableextra] were used for data visualization. 
 
-The raw dataset contains 32000 observations in total. I randomly selected 30000 observations to complete an exploratory analysis and modeling. I also set the seed as 1 so that every time we run the code, we can get the same result. The data was divided into two parts- training and test. Usually, the number of training data is more than the number of detection data, so I randomly selected 70% of data without replacement (21000 observations) as training data. We used the training data for model building and model selection. Then we fitted the optimum logistic model in the test dataset to see whether we can validate the optimum model. Table \@ref(tab:trainsummary) and Table \@ref(tab:testsummary) show a summary of important variables for both the training and test dataset. We can see that the different levels of each variable account for roughly the same proportion of the two datasets, so we believe that there is no significant difference between the training and test dataset. For example, 50.1% of the sample is female in the test dataset, and 49.7% of the sample is female in the training dataset.
+The raw dataset contains 32000 observations in total. I randomly selected 30000 observations to complete an exploratory analysis and modeling. I also set the seed as 1 so that the same result can be obtained every time I run the code.
 
-
+The data was divided into two parts- training and test. Usually, the number of observations in the training dataset is larger than the number of observations in the test dataset, so I randomly selected 70% of data without replacement (21000 observations) as training data. The training data was used for model building and model selection. Then I fitted the optimum logistic model in the test dataset to see whether the optimum model can be validated. Table \@ref(tab:trainsummary) and Table \@ref(tab:testsummary) show a summary of important variables for both the training and test dataset. The different levels of each variable account for roughly the same proportion of the two datasets, so I believe that there is no significant difference between the training and test dataset. For example, 50.1% of the sample is female in the test dataset, and 49.7% of the sample is female in the training dataset. 
 
 
 ```{r trainsummary,echo=FALSE,warning=FALSE,message=FALSE}
@@ -123,45 +108,38 @@ test %>%
 
 ## Data characteristics
 
-The dataset contains demographic (age group, gender) and geographic (patient’s neighborhood name and postal code), and severity (ever hospitalized, ever in ICU, outcome, etc.) information. This information is sensitive and it is possible to identify individuals either directly or indirectly. For example, if you see a case of a transgender patient in your community in the data, combined with age and FSA (first three characters of postal code), it is highly likely that you can identify that person.
+The dataset contains demographic (age group, gender) and geographic (patient’s neighborhood name and postal code), and severity (ever hospitalized, ever in ICU, outcome, etc.) information. This information is sensitive, and it is possible to identify individuals either directly or indirectly. For example, if you see a case of a transgender patient in your community in the data, combined with age and FSA (first three characters of postal code), it is highly likely that you can identify that person. 
 
 
-
-First, show an extract of our dataset (figure \@ref(datasummary)). We can tell that most variables are categorical variables. 
-
-```{r datasummary,echo=FALSE,warning=FALSE,message=FALSE}
+```{r datasummary,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="A glimpse of important varaibles",fig.height = 3, fig.width = 5}
 clean_data %>%
-  select(reported_date,age_group, client_gender, source_of_infection,neighbourhood_name,ever_hospitalized,outcome)%>%
-  slice(1:10) %>%
+  select(reported_date,age_group, source_of_infection,neighbourhood_name,ever_hospitalized,outcome)%>%
+  slice(1:8) %>%
   kable(
     caption = "A glimpse of important varaibles",
-    col.names = c("Reported date","Age group","Gender","Source of infection","Neighbourhood name","Ever hospitalized", "outcome"),
+    col.names = c("Reported date","Age group","Source of infection","Neighbourhood name","Ever hospitalized", "outcome"),
     digits = 1,
     booktabs = TRUE, 
     linesep = "",
-    align = c('l', 'l', 'c', 'c', 'c','c', 'r'),
+    align = c('l', 'l', 'c', 'c','c', 'r'),
   ) 
 ```
 
 
+Table \@ref(tab:datasummary) tells that most variables are categorical variables as suggested by an extract of our dataset. 
 
-
-
-
-
-```{r gender,echo=FALSE,warning=FALSE,message=FALSE}
-
-
+```{r gender,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Gender composition of hospitalized persons",fig.height = 3, fig.width = 5}
 ggplot(data= clean_data,aes(x = client_gender,fill=ever_hospitalized)) + 
 geom_bar(alpha = 0.6,position="identity") +
 coord_flip() +
 labs(y="count", x="Gender",title = "Gender composition of hospitalized persons") +
 theme_minimal() 
 ```
-From figure \@ref(fig:gender), The number of people who receive hospitalization is about the same for women and men.
 
 
-```{r piegraph,warning=FALSE,message=FALSE,echo = FALSE}
+Figure \@ref(fig:gender) indicates that the number of people receiving hospitalization is about the same for women and men. After careful consideration, gender is kept as a binary variable for males and females only for modeling. There are only three observations for transgender patients, which might lead to high instability in our model.
+
+```{r piegraph,warning=FALSE,message=FALSE,echo = FALSE,fig.cap="Age composition of severe illness patients",fig.height = 4, fig.width = 5.5}
 library(plotrix)
 hospitcal_data <- clean_data %>%
   filter(ever_hospitalized =="Yes")
@@ -185,13 +163,14 @@ p7 <- sum(hospitcal_data$age_group =="70 to 79 Years")
 p8 <- sum(hospitcal_data$age_group =="80 to 89 Years")
 p9 <- sum(hospitcal_data$age_group =="90 and older")
 y=c(p1,p2,p3,p4,p5,p6,p7,p8,p9)
-pie3D(y, labels=names,explode=0.1,col = hcl.colors(length(y)),main ="Age composition of severe illness patients",labelcex = 0.75,theta = 1.5)
+pie3D(y, labels=names,explode=0.1,col = hcl.colors(length(y)),main ="Age composition of severe illness patients",labelcex = 0.6,theta = 1.5)
 
 ```
 
 From figure \@ref(fig:piegraph), we can see that young and middle-aged patients only account for a quarter of severe illnesses of COVID-19. Most patients with severe symptoms are over 60 years old.  
 
-```{r fatal,warning=FALSE,message=FALSE,echo = FALSE}
+
+```{r fatal,warning=FALSE,message=FALSE,echo = FALSE,fig.cap="Outcome for COVID-19 patients",fig.height = 2.5, fig.width = 3.5}
 clean_data %>%
   filter(ever_hospitalized =="Yes") %>%
   ggplot(aes(x=outcome)) +
@@ -201,9 +180,12 @@ clean_data %>%
   
 ```
 
-From figure \@ref(fig:fatal), roughly 40% of all cases that were hospitalized related to their COVID-19 infection are fatal, which indicates there are no effective treatments for patients with severe symptoms of covid. 
+From figure \@ref(fig:fatal), roughly 40% cases that were hospitalized are fatal, which indicates there are no effective treatments for patients with severe symptoms of COVID-19.  
 
-```{r source,warning=FALSE,message=FALSE,echo = FALSE}
+
+
+
+```{r source,warning=FALSE,message=FALSE,echo = FALSE,fig.cap="Source of infection",fig.height = 5, fig.width = 6.5}
 names = c("No Information", 
           "Travel", 
           "Community", 
@@ -230,16 +212,19 @@ pie(y, labels=piepercent,col = hcl.colors(length(a), "Spectral"), main ="Source 
 legend("topright", names, cex=0.5, fill=hcl.colors(length(a), "Spectral"))
 ```
 
-From figure \@ref(fig:source), the source of infection in half of the cases is unknown and cannot be speculated. Household contact and close contact with covid positive are also important causes of COVID-19 infection. 10% of COVID patients are infected in healthcare institutions. Healthcare Institutions include hospitals, retirement homes, etc. Usually, people who go to the healthcare institutions for help are mainly the aged population. These people are in poor health conditions and have lower immunity, which makes them more susceptible to viral infections. 
+From figure \@ref(fig:source), the source of infection in half of the cases is unknown and cannot be speculated. Household contact and close contact with covid positive are also important causes of COVID-19 infection. 10% of COVID patients are infected in healthcare institutions. Healthcare Institutions include hospitals, retirement homes, etc. Usually, people who go to the healthcare institutions for help are mainly the aged population. These people are in poor health conditions and have a weaker immunity, making them more susceptible to viral infections. 
 
 
 # Model
 
-To find out what factors can make you seriously ill after getting covid, I performed logistic regression using R. Through the logistic regression model, I was unable to define causality, but rather explore the relationship between different variables. Since patients with mild symptoms can be recovered in a few days without hospitalization, I consider those who are hospitalized as severe illness of COVID-19. I set “ever hospitalized” as the explanatory variable. The variable “ever hospitalized” is a binary variable with two levels: Yes and No, which is an appropriate structure of the outcome variable. I recoded the “ever hospitalized” and set the outcome variable to be 1 if the patient received hospitalization, and 0 if vice versa. The logistic model is constructed using the R package “stats”.[@stats]
+To find out what factors can make you seriously ill after getting covid, I performed logistic regression using R [@citeR]. Through the logistic regression model, I am unable to define causality, but rather explore the relationship between different variables. Since patients with mild symptoms can be recovered in a few days without hospitalization, I consider those who are hospitalized as severe illness of COVID-19. I set “ever hospitalized” as the outcome variable. The variable “ever hospitalized” is a binary variable with two levels: Yes and No, which is an appropriate structure of the outcome variable. I recoded the “ever hospitalized” and set the outcome variable to be 1 if the patient received hospitalization, and 0 if vice versa. The logistic model is constructed using the R package “stats” [@stats].
 
-The general form of logistic model is :
+The general form of logistic model is (see Equation \@ref(eq:log)) :
 
-$log(\frac{\hat{p}}{1-\hat{p}}) = X_i\beta$
+\begin{equation} 
+  log(\frac{\hat{p}}{1-\hat{p}}) = X_i\beta
+  (\#eq:log)
+\end{equation} 
 
 - $\hat{p}$ is the probability of hospitalization given $X_i$
 - $X_i$ are covariates for observation i
@@ -247,49 +232,94 @@ $log(\frac{\hat{p}}{1-\hat{p}}) = X_i\beta$
 
 I will compare 3 logistic regression models, each with different independent variables, and ultimately choose the optimum model.
 
+## model assumption
+Before model construction, I will check whether the assumptions of the model are satisfied. It is important to check the assumptions of the model because if the assumptions of the model are not satisfied, it will lead to inaccurate predictions.
+
+There are four assumptions for a logistic model. 
+
+- Assumption of appropriate outcome type
+
+Logistic regression assumes the outcome variable to be binary with two levels. The response variable should follow binomial or bernoulli distribution.
+
+- Assumption of independence of observations
+
+Logistic regression assumes that the observations must be independent of each other. Each observation should represent one patient, so no repeated data is measured. In this paper, the residual plot will be used to check the independence assumption. If the residuals in the plot are randomly scattered around 0, the independence assumption is satisfied. 
+
+- Assumption of absence of multicollinearity
+
+Multicollinearity refers to a strong linear relationship between predictors, which might result in non-significant predictors, weakened statistical power of our logistic model, etc. Multicollinearity is accessed through VIF value, a predictor with a VIF value that exceeds 5 indicates strong multicollinearity, which suggests the predictor might need to be removed.
+
+- Assumption of large sample size
+
+Logistic model assumes there are sufficient observations for each variable to avoid overfitting. 
+
 ## Model construction
 ### Model 1 
 First, I would like to examine the effect of gender and age on the probability of hospitalization.
 
-The first model is :
+The first model is (see Equation \@ref(eq:1)):
 
-$log(\frac{p}{1-p})=\beta_0+\beta_1Client \ gender+\beta_2Age \ group$
-The probability of hospitalization is :
-$\hat{p}=\frac{e^{\hat{\beta_0}+\hat{\beta_1}Client \ gender+\hat{\beta_2}Age \ group}}{e^{\beta_0+\hat{\beta_1}Client \ gender+\hat{\beta_2}Age \ group}+1}$
+\begin{equation} 
+  log(\frac{p}{1-p})=\beta_0+\beta_1Client \ gender+\beta_2Age \ group
+  (\#eq:1)
+\end{equation} 
 
+The probability of hospitalization is (see Equation \@ref(eq:1a)):
 
-### Model 2 (final model)
-
-On the basis of model 1, I want to study the effect of the variable “outbreak associated”. This variable tells us whether the case is associated with a healthcare institution or not. 
-
-The second model is :
-
-$log(\frac{p}{1-p}) = \beta_0 + \beta_1Outbreak \ associated + \beta_2Client \ gender + \beta_3Age \ group$
-
-The probability of hospitalization is :
-$\hat{p}=\frac{e^{\hat{\beta_0}+ \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender +\hat{\beta_3}Age \ group}}{e^{\hat{\beta_0} + \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender + \hat{\beta_3}Age \ group}+1}$
+\begin{equation} 
+  \hat{p}=\frac{e^{\hat{\beta_0}+\hat{\beta_1}Client \ gender+\hat{\beta_2}Age \ group}}{e^{\beta_0+\hat{\beta_1}Client \ gender+\hat{\beta_2}Age \ group}+1}
+  (\#eq:1a)
+\end{equation} 
 
 
 
+### Model 2
+
+On the basis of model 1, I want to study the effect of the variable “outbreak associated”. This variable tells us whether the case is associated with healthcare institutions or not. If the infection is related to healthcare institutions, it is outbreak associated and if the infection is not hospital related, it is sporadic.
+
+The second model is (see Equation \@ref(eq:2)) :
+
+\begin{equation} 
+  log(\frac{p}{1-p}) = \beta_0 + \beta_1Outbreak \ associated + \beta_2Client \ gender + \beta_3Age \ group
+  (\#eq:2)
+\end{equation} 
 
 
+The probability of hospitalization is (see Equation \@ref(eq:2a)):
+
+\begin{equation} 
+  \hat{p}=\frac{e^{\hat{\beta_0}+ \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender +\hat{\beta_3}Age \ group}}{e^{\hat{\beta_0} + \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender + \hat{\beta_3}Age \ group}+1}
+  (\#eq:2a)
+\end{equation} 
 
 
 ### Model 3
-Based on model 2, I am also interested in whether the interaction term of outbreak associated and gender affect the probability of severe illness of COVID-19.
+Based on model 2, I am also interested in whether the interaction term of outbreak associated and gender affect the probability of developing severe COVID-19 that requires hospitalization.
 
-The third model is :
+The third model is (see Equation \@ref(eq:3)) :
 
-$log(\frac{p}{1-p}) = \beta_0 + \beta_1Outbreak \ associated + \beta_2Client \ gender + \beta_3Age \ group +\beta_4Client \ gender:Outbreak \ associated$
+
+\begin{equation} 
+  log(\frac{p}{1-p}) = \beta_0 + \beta_1Outbreak \ associated + \beta_2Client \ gender + \beta_3Age \ group +\beta_4Client \ gender:Outbreak \ associated
+  (\#eq:3)
+\end{equation}
+
 
 The probability of hospitalization is :
 
-$\hat{p}=\frac{e^{\hat{\beta_0}+ \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender +\hat{\beta_3}Age \ group+\hat{\beta_4}Client \ gender:Outbreak \ associated}}{e^{\hat{\beta_0} + \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender + \hat{\beta_3}Age \ group+\hat{\beta_4}Client \ gender:Outbreak \ associated}+1}$
 
+\begin{equation} 
+  \hat{p}=\frac{e^{\hat{\beta_0}+ \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender +\hat{\beta_3}Age \ group+\hat{\beta_4}Client \ gender:Outbreak \ associated}}{e^{\hat{\beta_0} + \hat{\beta_1}Outbreak \ associated + \hat{\beta_2}Client \ gender + \hat{\beta_3}Age \ group+\hat{\beta_4}Client \ gender:Outbreak \ associated}+1}
+  (\#eq:3a)
+\end{equation} 
 
+After model construction, I will select the best model in the next step. The preferred model will be tested with test data to see if it can be validated.
 
-After model construction, I will select the best model in the next step. Then model assumptions will be checked and the preferred model is tested with test data to see if it can be validated.
+## Model validation
 
+Data validation is an important process to be carried out after model selection, it is a way to evaluate the effectiveness of our optimum model. The COVID-19 cases in Toronto dataset was separated into training and test dataset in the beginning, the training dataset is used for model building and model selection, and the test dataset is used for model validation. 
+
+The test dataset will be used to fit the optimum model. If the following conditions are satisfied, it is safe to say the optimum model is validated. First, the difference of model coefficients of the test dataset is within the standard error of corresponding coefficients of the training dataset. Second, the predictors of the optimum model appear significant in both training and test datasets. Thirdly, when fitting the optimum model using test dataset, the test dataset must not have more serious assumption violations.  
 
 
 # Result
@@ -298,26 +328,40 @@ After plugging in the data, we obtained the regression coefficients for the thre
 
 The first model is :
 
-$log(\frac{\hat{p}}{1-\hat{p}}) = -5.5164+0.434Client \ gender_{Male} + 0.5701Age \ group_{20-29 \ years}+0.8237Age \ group_{30-39 \ years}+1.5476Age \ group_{40-49 \ years} +2.0775Age \ group_{50-59 \ years} +3.0685Age \ group_{60-69 \ years} +4.2582Age \ group_{70-79 \ years}+4.6742Age \ group_{80-89 \ years} +4.4333Age \ group_{90 +}$
+\begin{equation} 
+\begin{split}
+log(\frac{\hat{p}}{1-\hat{p}}) = -5.5164+0.434Client \ gender_{Male} + 0.5701Age \ group_{20-29 \ years}+0.8237Age \ group_{30-39 \ years}\\
++1.5476Age \ group_{40-49 \ years} +2.0775Age \ group_{50-59 \ years}+3.0685Age \ group_{60-69 \ years}\\
++4.2582Age \ group_{70-79 \ years}+4.6742Age \ group_{80-89 \ years} +4.4333Age \ group_{90 +}\\
+\end{split}
+(\#eq:mod1)
+\end{equation} 
+
 
 ```{r ,include=FALSE}
 mod1 <- glm(hosptial~client_gender + age_group, family = "binomial", data = train)
 summary(mod1)
 ```
-Table \@ref(tab:model1) shows a summary of model 1. Most of the predictors are statistically significant at a 0.05 significant level. 
+Table \@ref(tab:model1) shows a summary of model 1 (see Equation \@ref(eq:mod1)). Most of the predictors are statistically significant at a 0.05 significant level. 
 
 ```{r model1,echo=FALSE,warning = FALSE,message=FALSE}
 # build a table to show summary of model 1
 kbl(broom::tidy(mod1)[,],caption = "A summary of model 1", digits = 4, format="markdown",align="ccccc",padding =3)
 ```
 
-
-
 The second model is :
 
-$log(\frac{\hat{p}}{1-\hat{p}}) =-5.7373 +0.279 Outbreak \ associated_{Sporadic} + 0.4189	Client \ gender_{Male} + 0.537Age \ group_{20-29 \ years}+0.7959Age \ group_{30-39 \ years}+1.5287Age \ group_{40-49 \ years} +2.0612Age \ group_{50-59 \ years} +3.0585Age \ group_{60-69 \ years} + 4.2752Age \ group_{70-79 \ years}+4.7766Age \ group_{80-89 \ years} +4.61334Age \ group_{90 +}$
+\begin{equation} 
+\begin{split}
+log(\frac{\hat{p}}{1-\hat{p}}) = -5.7373 +0.279 Outbreak \ associated_{Sporadic} + 0.4189	Client \ gender_{Male} + 0.537Age \ group_{20-29 \ years}\\
++0.7959Age \ group_{30-39 \ years}+1.5287Age \ group_{40-49 \ years} +2.0612Age \ group_{50-59 \ years}+3.0585Age \ group_{60-69 \ years}\\
++ 4.2752Age \ group_{70-79 \ years}+4.7766Age \ group_{80-89 \ years} +4.61334Age \ group_{90 +}\\
+\end{split}
+(\#eq:mod2)
+\end{equation} 
 
-Table \@ref(tab:model2) shows a summary of model 2.
+
+Table \@ref(tab:model2) shows a summary of model 2 (see Equation \@ref(eq:mod2)).
 
 ```{r,include=FALSE}
 mod2 <- glm(hosptial~outbreak_associated+client_gender + age_group, family = "binomial",data = train)
@@ -330,29 +374,35 @@ summary(mod2)
 kbl(broom::tidy(mod2)[,],caption = "A summary of model 2", digits = 4, format="markdown",align="ccccc",padding =3)
 ```
 
-
-
-
 The third model is :
 
-$log(\frac{\hat{p}}{1-\hat{p}}) =-5.8792 +0.4807 Outbreak \ associated_{Sporadic} + 0.707	Client \ gender_{Male} + 0.5474Age \ group_{20-29 \ years}+0.8055Age \ group_{30-39 \ years}+1.5366Age \ group_{40-49 \ years} +2.0678Age \ group_{50-59 \ years} +3.0633Age \ group_{60-69 \ years} + 4.2713Age \ group_{70-79 \ years}+4.7898Age \ group_{80-89 \ years} +4.6534Age \ group_{90 +}-0.4029 Outbreak \ associated_{Sporadic}:Client \ gender_{Male}$
+
+\begin{equation} 
+\begin{split}
+log(\frac{\hat{p}}{1-\hat{p}}) = -5.8792 +0.4807 Outbreak \ associated_{Sporadic} + 0.707	Client \ gender_{Male} + 0.5474Age \ group_{20-29 \ years}\\
++0.8055Age \ group_{30-39 \ years}+1.5366Age \ group_{40-49 \ years} +2.0678Age \ group_{50-59 \ years}+3.0633Age \ group_{60-69 \ years}\\
++ 4.2713Age \ group_{70-79 \ years}+4.7898Age \ group_{80-89 \ years} +4.6534Age \ group_{90 +}\\
+-0.4029 Outbreak \ associated_{Sporadic}:Client \ gender_{Male}\\
+\end{split}
+(\#eq:mod3)
+\end{equation}
+
+
 
 ```{r ,include=FALSE}
 mod3 <- glm(hosptial~outbreak_associated+client_gender+age_group+client_gender:outbreak_associated,  family = "binomial", data = train)
 summary(mod3)
 ```
-Table \@ref(tab:model3) shows a summary of model 3.
+Table \@ref(tab:model3) shows a summary of model 3 (see Equation \@ref(eq:mod3)).
 
 ```{r model3,echo=FALSE,warning = FALSE,message=FALSE}
 # build a table to show summary of model 3
 kbl(broom::tidy(mod3)[,],caption = "A summary of model 3", digits = 4, format="markdown",align="ccccc",padding =3)
 ```
 
-
-
 In order to figure out the optimum model, the likelihood ratio test is performed. The likelihood ratio test helps us access the goodness of fits by maximizing the entire parameter space, which is difficult and time-consuming to calculate by hand. I used the R function "lrtest( )" from R package "lmtest" [@lmtest] to run the test. The two models to be compared must be nested. 
 
-In this case, model 1 is a subset of model 2, so the two models are nested. Table \@ref(tab:compare12) shows a likelihood ratio test to compare model 1 and model 2. From table \@ref(tab:compare12), the p-value is 0.0012, which is smaller than 0.05, so we have strong evidence against the null hypothesis that the reduced model (mode 1) better explains the COVID-19 cases data. In conclusion, we believe that model 2 (full model) better explains our data. 
+In this case, model 1 is a subset of model 2, so the two models are nested. Table \@ref(tab:compare12) shows a likelihood ratio test to compare model 1 and model 2. From table \@ref(tab:compare12), the p-value is 0.0012, which is smaller than 0.05, so I have strong evidence against the null hypothesis that the reduced model (mode 1) better explains the COVID-19 cases data. In conclusion,compared to model 1, model 2 (full model) better explains the data. 
 
 ```{r compare12,echo=FALSE,warning = FALSE,message=FALSE}
 # Use likelihood ratio test to compare model1 and model2 (full)
@@ -361,7 +411,7 @@ knitr::kable(lmtest::lrtest(mod1,mod2),caption="Comparison of model 1 and model 
   kable_styling("striped", full_width = F) 
 ```
 
-Model 2 is a subset of model 3, so I performed a likelihood ratio test to compare mode 2 and model 3. (Table \@ref(tab:compare23)) From table \@ref(tab:compare23), the p-value is 0.068, which is greater than 0.05, so we reject the null hypothesis ($H_0$) that model 2 better explains the COVID-19 cases data. Compared to model 3, model 2 better explains the data. In conclusion, model 2 is the optimum model. 
+Model 2 is a subset of model 3, so I performed a likelihood ratio test to compare mode 2 and model 3. (Table \@ref(tab:compare23)) From table \@ref(tab:compare23), the p-value is 0.068, which is greater than 0.05, so I failed to reject the null hypothesis ($H_0$) that model 2 better explains the COVID-19 cases data. Compared to model 3, model 2 better explains the data. In conclusion, model 2 (see Equation \@ref(eq:mod2)) is the optimum model. 
 
 ```{r compare23,echo=FALSE,warning = FALSE,message=FALSE}
 # Use likelihood ratio test to compare model 2 and model 3
@@ -370,27 +420,46 @@ knitr::kable(lmtest::lrtest(mod3,mod2),caption="Comparison of model 2 and model 
   kable_styling("striped", full_width = F) 
 ```
 
-# Model interpretation
+## Model interpretation
 The optimum model is :
 
-$log(\frac{\hat{p}}{1-\hat{p}}) =-5.7373 +0.279 Outbreak \ associated_{Sporadic} + 0.4189	Client \ gender_{Male} + 0.537Age \ group_{20-29 \ years}+0.7959Age \ group_{30-39 \ years}+1.5287Age \ group_{40-49 \ years} +2.0612Age \ group_{50-59 \ years} +3.0585Age \ group_{60-69 \ years} + 4.2752Age \ group_{70-79 \ years}+4.7766Age \ group_{80-89 \ years} +4.61334Age \ group_{90 +}$
+\begin{equation} 
+\begin{split}
+log(\frac{\hat{p}}{1-\hat{p}}) = -5.7373 +0.279 Outbreak \ associated_{Sporadic} + 0.4189	Client \ gender_{Male} + 0.537Age \ group_{20-29 \ years}\\
++0.7959Age \ group_{30-39 \ years}+1.5287Age \ group_{40-49 \ years} +2.0612Age \ group_{50-59 \ years}+3.0585Age \ group_{60-69 \ years}\\
++ 4.2752Age \ group_{70-79 \ years}+4.7766Age \ group_{80-89 \ years} +4.61334Age \ group_{90 +}\\
+\end{split}
+(\#eq:finalmod)
+\end{equation} 
+
 
 - Outbreak associated
-When all other predictors except outbreak associated remain the same, the odds of hospitalization for an outbreak-associated patient is 1.3218 ($e^{0.279}$) times large as the odds of hospitalization for a sporadic patient.
-- Gender 
-When all other predictors except sex remain the same, the odds of hospitalization for a male is 1.5203 times as large as the odds for a female being admitted to a hospital.
+
+When all other predictors except outbreak associated remain the same, the odds of hospitalization for an outbreak-associated patient is 1.3218 ($e^{0.279}$) times larger than the odds of hospitalization for a sporadic patient.
+
+- Gender
+
+When all other predictors except gender remain the same, the odds of hospitalization for a male is 1.5203 times larger than the odds for a female being admitted to a hospital.
+
 - Age group
-When all other predictors except age group remain the same, the odds of hospitalization for a patient aged 20-29 is 1.711 times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 30-39 is 2.2164 ($e^{0.7959}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 40-49 is 4.6122 ($e^{1.5287}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 50-59 is 7.8554 ($e^{2.0612}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 60-69 is 21.2656 ($e^{3.0585}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 70-79 is 71.9017 ($e^{4.2753}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged 80-89 is 118.7($e^{4.7766}$) times as large as the odds for a patient aged below 20. The odds of hospitalization for a patient aged over 90 is 104.9412 ($e^{4.6534}$) times as large as the odds for a patient aged below 20. 
 
-# Model assumption
+When all other predictors except age group remain the same, the odds of hospitalization for a patient aged 20-29 is 1.711 times larger than the odds for a patient aged below 20. The odds of hospitalization for a patient aged 30-39 is 2.2164 ($e^{0.7959}$) times larger than the odds for a patient aged below 20. The odds of hospitalization for a patient aged 40-49 is 4.6122 ($e^{1.5287}$) times larger than the odds for a patient aged below 20. The odds of hospitalization for a patient aged 50-59 is 7.8554 ($e^{2.0612}$) times larger than the odds for a patient aged below 20. The odds of hospitalization for a patient aged 60-69 is 21.2656 ($e^{3.0585}$) times larger than the odds for a patient aged below 20. The odds of hospitalization for a patient aged 70-79 is 71.9017 ($e^{4.2753}$) times larger than the odds for a patient aged below 20. The odds of hospitalization for a patient aged 80-89 is 118.7 ($e^{4.7766}$) times larger than the odds for a patient aged below 20. The odds of hospitalization for a patient aged over 90 is 104.9412 ($e^{4.6534}$) times larger than the odds for a patient aged below 20. 
+
+- Interaction of gender and outbreak
+
+When all other predictors remain the same, the odds of hospitalization for an outbreak-associated male patient is 0.6684 times larger than the odds of hospitalization for a sporadic
+female patient.
+
+ 
+## Model assumption
 
 
-After selecting the model, I will check whether the assumptions of the model are satisfied. It is important to check the assumptions of the model because if the assumptions of the model are not satisfied, it will lead to inaccurate predictions.
-The first assumption is the appropriate outcome type. Our response variable is supposed to be a binary variable. For our optimum model, the response variable "ever hospitalized" has two levels, Yes and No, which means the first assumption is met. Secondly, I used residual plot to check the independence assumption. From figure \@ref(fig:residual), the residuals are roughly randomly centralized around 0, so the independence assumption holds. Thirdly, we want to ensure the absence of multicollinearity. Multicollinearity refers to a strong linear relationship between predictors, which might result in non-significant predictors, weakened statistical power of our logistic model etc. Multicollinearity is accessed through VIF value, a predictor with a VIF value that exceeds 5 indicates strong multicollinearity, which suggests the predictor might need to be removed. From table \@ref(tab:vif), since no VIF values exceed 5, we can conclude the absence of multicollinearity assumption is satisfied.  
+For the optimum model (see Equation \@ref(eq:finalmod)), the outcome variable "ever hospitalized" has two levels, Yes and No, which means the assumption of appropriate outcome type is met. From figure \@ref(fig:residual), the residuals are roughly randomly centralized around 0, so the independence assumption holds. 
+It is difficult and time-consuming to calculate VIF value by hand, so R package "car" [@car] was used to calculate VIF values for model 2. From table \@ref(tab:vif), since no VIF values exceed 5, it is safe to say the absence of multicollinearity assumption is satisfied. The dataset contains over 30000 observations, which suggests the assumption of large sample size holds.  
 
 
 
-```{r residual,echo=FALSE,warning = FALSE,message=FALSE}
+```{r residual,echo=FALSE,warning = FALSE,message=FALSE,fig.cap="Residual Series Plot",fig.height = 3, fig.width = 5}
 train$ever_hospitalized <- as.factor(train$ever_hospitalized)
 m <- glm(ever_hospitalized~outbreak_associated+client_gender + age_group, family = "binomial",data = train)
 
@@ -405,9 +474,6 @@ ggplot(modeldata, aes(index, .std.resid)) +
 ```
 
 
-
-
-
 ```{r vif,echo=FALSE,warning = FALSE,message=FALSE}
 
 knitr::kable(car::vif(mod2),caption="VIF values for different predictors") %>%
@@ -416,15 +482,11 @@ knitr::kable(car::vif(mod2),caption="VIF values for different predictors") %>%
 ```
 
 
+## Model validation
+I fitted the preferred model using the test dataset, and table \@ref(tab:m2test) shows a summary of the preferred in the test dataset. Comparing table \@ref(tab:model2) and table \@ref(tab:m2test), the same predictors are statistically significant in both training and test datasets. What's more, the response variable is a binary variable, which indicates the assumption of appropriate outcome type holds. Figure \@ref(fig:testresidual) shows the assumption of independence assumption holds. From table \@ref(tab:testvif), the VIF values for predictors are smaller than 5, indicating the assumption of absence of multicollinearity is satisfied. Overall, compared to model assumptions using the training datset, the model assumptions are not more seriously violated in the test dataset.
 
-
-
-## model validation
-
-Data validation is an important process to be carried out after model selection, it is a way to evaluate the effectiveness of our optimum model. In this report, the test dataset was used for data validation. I fitted the preferred model using the test dataset, and table \@ref(tab:m2test) shows a summary of the preferred in the test dataset. Comparing table 3 and table 9, we find out that the same predictors are statistically significant in both training and test datasets. 
-As for model assumption, the response variable is a binary variable, which indicates the assumption of appropriate outcome type holds. Figure \@ref(fig:testresidual) shows the independence assumption holds. Table \@ref(tab:testvif) shows the absence of multicollinearity is satisfied. Overall, there is no more serious assumption violation in the test dataset.
-As for the model coefficients, the difference of coefficients of client gender male, outbreak_associatedSporadic are bigger than the standard error of the corresponding coefficient using the training dataset. For example, the difference of coefficient for age group between 20 and 29 is 1.7706, which is larger than 0.2969 (the standard error for age group between 20 and 29 in the training dataset). The difference of coefficients of other terms is within the standard error of corresponding coefficients of the training dataset. 
-Overall, most conditions are satisfied, so we believe that the optimum is validated. 
+As for the model coefficients, the difference of coefficients of $client \ gender_{male}, outbreak \ associated_{Sporadic}$ are bigger than the standard error of the corresponding coefficient using the training dataset. For example, the difference of coefficient for age group between 20 and 29 is 1.7706, which is larger than 0.2969 (the standard error for age group between 20 and 29 in the training dataset). The difference of coefficients of other terms is within the standard error of corresponding coefficients of the training dataset. 
+Overall, most conditions are satisfied, so the optimum model is validated. 
 
 ```{r ,include=FALSE}
 m2test <- glm(hosptial~outbreak_associated+client_gender + age_group, family = "binomial",data = test)
@@ -438,17 +500,15 @@ kbl(broom::tidy(m2test)[,],caption = "A summary of model 2 using test dataset", 
 
 
 
-
 ```{r testvif,echo=FALSE,warning = FALSE,message=FALSE}
 knitr::kable(car::vif(m2test),caption="VIF values for different predictors using test dataset") %>%
   kable_styling("striped", full_width = F)
 ```
 
 
-```{r testresidual,echo=FALSE,warning = FALSE,message=FALSE}
+```{r testresidual,echo=FALSE,warning = FALSE,message=FALSE, fig.cap="Residual Series Plot for test dataset",fig.height = 2.5, fig.width = 5}
 test$ever_hospitalized <- as.factor(test$ever_hospitalized)
 t <- glm(ever_hospitalized~outbreak_associated+client_gender + age_group, family = "binomial",data = train)
-
 # Extract model results
 testdata <- augment(t) %>% 
   mutate(index = 1:n())
@@ -459,22 +519,34 @@ ggplot(testdata, aes(index, .std.resid)) +
   theme_bw() 
 ```
 
-
-
 # Discussion
 
-## Purpose and summary for the survey
+## Summary
+
+COVID-19 is not only a global pandemic but also causes economic devastation. Many people may be facing an increased level of anxiety and stress due to the outbreak of COVDI-19. The speed of the spread of COVID-19 is much faster than the pace that we learn about the virus. Almost as soon as the virus started to break out, scientists around the world began researching diagnostic methods, vaccines, and treatments. Now there are five major variants of COVID-19: Alpha, Beta, Gamma, Delta, and Omicron [@variants].
+
+In this report, I used the COVID-19 Cases in Toronto dataset from Open Data Toronto to study various factors that increase the probability of getting severe illness due to COVID-19. The target population is all confirmed COVID-19 positive cases reported to Toronto Public Health since 2020. I focused on the effect of age group, gender, and whether the infection occurs in healthcare institutions on the probability of developing severe symptoms due to the virus. In this paper, logistic regression is built to estimate the likelihood of hospitalization after getting COVID using the training dataset. The model is then validated using the test dataset. 
+
+## Findings
+
+In this report, I used a logistic regression built to predict the likelihood of hospitalization after getting COVID. The assumptions of appropriate outcome type, independence assumption, and assumption of absence of multicollinearity are checked before fitting the logistic model. No violations of model assumptions are found so it is safe to say our optimum model is reliable. We found out that there is a linear relationship between age, gender, whether the infection occurs in healthcare institutions and the probability of hospitalization. Aged, male population is more likely to get severe symptoms of COVID-19. Aged population over 80 years old are roughly 100 times more likely to develop symptoms severe enough to require hospitalization than teenagers. This data is very alarming, and one possible guess is that older people have weaker immune systems and are more vulnerable to viral infections. In addition, older people may have other geriatric conditions such as high blood pressure, heart disease, diabetes, etc. People infected in healthcare institutions like hospitals, and retirement homes are 1.3 times more likely to develop symptoms severe enough to require hospitalization than people getting COVID-19 from other places. A possible speculation is that retirement homes are filled with elderly people, and they are vulnerable to virus infection. People who go to medical centers to seek help also are not in good health conditions and their immune system is depressed. What’s more, males are roughly 1.5 times more likely to develop symptoms severe enough to require hospitalization than females. I removed transgender, trans women, and unknown responses for gender, because the observations for transgender, trans women are too small, which might lead to extremely high variability in the model. 
+
+Based on the above information obtained from the preferred logistic model (see Equation \@ref(eq:finalmod)), we can suggest some useful measurements to reduce infections in high-risk groups. First, if you feel sick and go to a medical facility for help, be sure to watch out for nosocomial infections. Never take your mask off in the hospital, and try to wear disposable gloves if conditioning allows. When you are in poor health conditions, you are more vulnerable to various virus infections. Secondly, the elderly should try to avoid going to crowded places. For example, they can ask their children or neighbors to help them order vegetables and other foods online so that they don't have to go to places like supermarkets where there is no air circulation and a lot of people.
 
 
-## Learn about the world
+## Limitation & Future Work
 
+First, the raw data only collects confirmed cases reported to the Toronto Public Health, which accounts for a fraction of those infected with COVID-19. Data from patients who tested positive using the self-test kit are not collected. In addition to performing extensive screening, data from asymptomatic patients are difficult to collect. A large number of missing data from asymptomatic and self-testing patients can lead to a higher proportion of infected individuals that that aren't admitted to hospitals in the dataset. Asymptomatic and self-testing patients do not need hospitalization. If we consider asymptomatic patients, the percentage of patients who develop symptoms severe enough to require hospitalization will decline sharply. The proportion of patients who are hospitalized versus those who are not is important for fitting the logistic model. If the outcome is rare, even though the sample is large, it is inappropriate to fit a logit model. 
 
+Secondly, the dataset contains some ethical issues. The dataset contains sensitive information such as home address. Additionally, the data includes transgender as one option, however, only the option for trans women is included seems problematic. There are only three people are found to be transgender, and only one individual is a trans woman. Combining the neighborhood name and age group of the trans women, it is highly likely to identify the individual. The re-identification risk is a serious violation of people's privacy rights and has many potential risks. In addition to this, data collection is mandatory due to public health concerns, which is contrary to the principle of voluntariness. The data also contains medical information such as whether you are incubated, whether or not you are admitted to ICU, etc. This information should be kept between doctors and patients. 
 
-## Weakness and areas in the future
+In this report, I found out that severe symptoms of COVID-19 are related to age, gender, etc. Even though no causality is defined, the paper can warn people of the potential risks. Hopefully, this article will make readers aware of the probability of developing serious symptoms if they are infected with the virus. In the future, more deep research will be done to prevent people from developing symptoms severe enough to require hospitalization. From the results shown above, men are more likely to develop symptoms severe enough to require hospitalization, but the underlying cause is not clear. Is it because of the difference in physiological constitution or the difference in lifestyle habits? This is a new topic worth studying.
+
 
 
 
 \newpage
+
 # Appendix
 
 **Motivation**
@@ -497,7 +569,7 @@ ggplot(testdata, aes(index, .std.resid)) +
 3. *Does the dataset contain all possible instances or is it a sample (not necessarily random) of instances from a larger set? If the dataset is a sample, then what is the larger set? Is the sample representative of the larger set (for example, geographic coverage)? If so, please describe how this representativeness was validated/verified. If it is not representative of the larger set, please describe why not (for example, to cover a more diverse range of instances, because instances were withheld or unavailable).*
 	- The dataset contains all confirmed and probable COVID-19 cases in Toronto. It can be considered as s subset of COVID-19 cases in Ontario.
 4. *What data does each instance consist of? "Raw" data (for example, unprocessed text or images) or features? In either case, please provide a description.*
-	- Each instance consist of demographic (age group, gender) and geographic (patient’s neighborhood name and postal code), and severity (ever hospitalized, ever in icu, outcome etc.) information. 
+	- Each instance consist of demographic (age group, gender) and geographic (patient’s neighbourhood name and postal code), and severity (ever hospitalized, ever in icu, outcome etc.) information. 
 5. *Is there a label or target associated with each instance? If so, please provide a description.*
 	- Yes, every observation has a unique assigned ID. 
 6. *Is any information missing from individual instances? If so, please provide a description, explaining why this information is missing (for example, because it was unavailable). This does not include intentionally removed information, but might include, for example, redacted text.*
@@ -511,7 +583,7 @@ ggplot(testdata, aes(index, .std.resid)) +
 10. *Is the dataset self-contained, or does it link to or otherwise rely on external resources (for example, websites, tweets, other datasets)? If it links to or relies on external resources, a) are there guarantees that they will exist, and remain constant, over time; b) are there official archival versions of the complete dataset (that is, including the external resources as they existed at the time the dataset was created); c) are there any restrictions (for example, licenses, fees) associated with any of the external resources that might apply to a dataset consumer? Please provide descriptions of all external resources and any restrictions associated with them, as well as links or other access points, as appropriate.*
 	- The dataset rely on open data Toronto website. The data are subject to change as public health investigations into reported cases are ongoing. The consumer should follow Open Data License. The dataset is available from https://open.toronto.ca/dataset/covid-19-cases-in-toronto/.  
 11. *Does the dataset contain data that might be considered confidential (for example, data that is protected by legal privilege or by doctor-patient confidentiality, data that includes the content of individuals' non-public communications)? If so, please provide a description.*
-	- Yes. The datast contains information whether you are incubated, whether you are admitted to ICU.
+	- Yes. The datast contains information whether you are incubated, whether you are admitted to ICU, etc.
 12. *Does the dataset contain data that, if viewed directly, might be offensive, insulting, threatening, or might otherwise cause anxiety? If so, please describe why.*
 	- No.
 13. *Does the dataset identify any sub-populations (for example, by age, gender)? If so, please describe how these subpopulations are identified and provide a description of their respective distributions within the dataset.*
@@ -614,16 +686,12 @@ ggplot(testdata, aes(index, .std.resid)) +
 
 
 \newpage
+
 # Reference
 
 
 
-Mortality analyses. Johns Hopkins Coronavirus Resource Center. (n.d.). Retrieved March 31, 2022, from https://coronavirus.jhu.edu/data/mortality 
-
-
-
-
-World Health Organization. (n.d.). Coronavirus. World Health Organization. Retrieved March 31, 2022, from https://www.who.int/health-topics/coronavirus#tab=tab_1 
+ 
 
 
 
